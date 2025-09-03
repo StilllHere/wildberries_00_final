@@ -199,7 +199,7 @@ func sendAddamsFamilyOrders(producer *kafka.Producer) {
 
 
 func sendInvalidOrders(producer *kafka.Producer) {
-	// Нет delivery, payment, items (невалидные данные)
+	// Нет delivery, payment, items
 	incompleteOrder := map[string]interface{}{
 		"order_uid":    "invalid_incomplete_" + randString(6),
 		"track_number": "INVALID001",
