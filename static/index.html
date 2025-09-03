@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 25px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #007bff;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .order-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .order-field {
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .order-field strong {
+            display: inline-block;
+            width: 140px;
+            color: #555;
+        }
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .item-card {
+            padding: 15px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .item-card h4 {
+            margin-top: 0;
+            color: #28a745;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        #error {
+            background: #ffe6e6;
+            border-color: #dc3545;
+        }
+        #error h3 {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Order Search - Wildberries</h1>
+        
+        <div class="search-form">
+            <input type="text" id="orderId" placeholder="Enter Order UID (e.g., b563feb7b2b84b6test)" />
+            <button onclick="searchOrder()">Search Order</button>
+        </div>
+
+        <div id="result" class="result" style="display: none;">
+            <div class="section">
+                <h3>Order Information</h3>
+                <div class="order-info">
+                    <div class="order-field"><strong>Order UID:</strong> <span id="order-uid"></span></div>
+                    <div class="order-field"><strong>Track Number:</strong> <span id="track-number"></span></div>
+                    <div class="order-field"><strong>Entry:</strong> <span id="entry"></span></div>
+                    <div class="order-field"><strong>Locale:</strong> <span id="locale"></span></div>
+                    <div class="order-field"><strong>Customer ID:</strong> <span id="customer-id"></span></div>
+                    <div class="order-field"><strong>Delivery Service:</strong> <span id="delivery-service"></span></div>
+                    <div class="order-field"><strong>Created At:</strong> <span id="date-created"></span></div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Delivery Information</h3>
+                <div class="order-info">
+                    <div class="order-field"><strong>Name:</strong> <span id="delivery-name"></span></div>
+                    <div class="order-field"><strong>Phone:</strong> <span id="delivery-phone"></span></div>
+                    <div class="order-field"><strong>Email:</strong> <span id="delivery-email"></span></div>
+                    <div class="order-field"><strong>Address:</strong> <span id="delivery-address"></span></div>
+                    <div class="order-field"><strong>City:</strong> <span id="delivery-city"></span></div>
+                    <div class="order-field"><strong>Region:</strong> <span id="delivery-region"></span></div>
+                    <div class="order-field"><strong>ZIP:</strong> <span id="delivery-zip"></span></div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Payment Information</h3>
+                <div class="order-info">
+                    <div class="order-field"><strong>Transaction:</strong> <span id="payment-transaction"></span></div>
+                    <div class="order-field"><strong>Amount:</strong> $<span id="payment-amount"></span></div>
+                    <div class="order-field"><strong>Currency:</strong> <span id="payment-currency"></span></div>
+                    <div class="order-field"><strong>Provider:</strong> <span id="payment-provider"></span></div>
+                    <div class="order-field"><strong>Bank:</strong> <span id="payment-bank"></span></div>
+                    <div class="order-field"><strong>Delivery Cost:</strong> $<span id="payment-delivery-cost"></span></div>
+                    <div class="order-field"><strong>Goods Total:</strong> $<span id="payment-goods-total"></span></div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Order Items</h3>
+                <div id="items-container" class="items-grid">
+                </div>
+            </div>
+        </div>
+
+        <div id="error" class="result" style="display: none;">
+            <h3>Error</h3>
+            <p id="error-message"></p>
+        </div>
+    </div>
+
+    <script>
+        function searchOrder() {
+            const orderId = document.getElementById('orderId').value.trim();
+            if (!orderId) {
+                alert('Please enter Order UID');
+                return;
+            }
+
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+
+            fetch(`/orders/${orderId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw new Error(err.error) });
+                    }
+                    return response.json();
+                })
+                .then(order => {
+                    document.getElementById('order-uid').textContent = order.order_uid;
+                    document.getElementById('track-number').textContent = order.track_number;
+                    document.getElementById('entry').textContent = order.entry;
+                    document.getElementById('locale').textContent = order.locale;
+                    document.getElementById('customer-id').textContent = order.customer_id;
+                    document.getElementById('delivery-service').textContent = order.delivery_service;
+                    document.getElementById('date-created').textContent = new Date(order.date_created).toLocaleString();
+
+                    document.getElementById('delivery-name').textContent = order.delivery.name;
+                    document.getElementById('delivery-phone').textContent = order.delivery.phone;
+                    document.getElementById('delivery-email').textContent = order.delivery.email;
+                    document.getElementById('delivery-address').textContent = order.delivery.address;
+                    document.getElementById('delivery-city').textContent = order.delivery.city;
+                    document.getElementById('delivery-region').textContent = order.delivery.region;
+                    document.getElementById('delivery-zip').textContent = order.delivery.zip;
+
+                    document.getElementById('payment-transaction').textContent = order.payment.transaction;
+                    document.getElementById('payment-amount').textContent = (order.payment.amount / 100).toFixed(2);
+                    document.getElementById('payment-currency').textContent = order.payment.currency;
+                    document.getElementById('payment-provider').textContent = order.payment.provider;
+                    document.getElementById('payment-bank').textContent = order.payment.bank;
+                    document.getElementById('payment-delivery-cost').textContent = (order.payment.delivery_cost / 100).toFixed(2);
+                    document.getElementById('payment-goods-total').textContent = (order.payment.goods_total / 100).toFixed(2);
+
+                    const itemsContainer = document.getElementById('items-container');
+                    itemsContainer.innerHTML = '';
+                    
+                    order.items.forEach(item => {
+                        const itemCard = document.createElement('div');
+                        itemCard.className = 'item-card';
+                        itemCard.innerHTML = `
+                            <h4>${item.name}</h4>
+                            <div><strong>Brand:</strong> ${item.brand}</div>
+                            <div><strong>Price:</strong> $${(item.price / 100).toFixed(2)}</div>
+                            <div><strong>Sale:</strong> ${item.sale}%</div>
+                            <div><strong>Total:</strong> $${(item.total_price / 100).toFixed(2)}</div>
+                            <div><strong>Size:</strong> ${item.size}</div>
+                            <div><strong>Status:</strong> ${item.status}</div>
+                            <div><strong>CHRT ID:</strong> ${item.chrt_id}</div>
+                        `;
+                        itemsContainer.appendChild(itemCard);
+                    });
+
+
+                    document.getElementById('result').style.display = 'block';
+                })
+                .catch(error => {
+                    document.getElementById('error-message').textContent = error.message;
+                    document.getElementById('error').style.display = 'block';
+                });
+        }
+
+        document.getElementById('orderId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchOrder();
+            }
+        });
+    </script>
+</body>
+</html>
