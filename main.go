@@ -36,6 +36,7 @@ func main() {
 	log.Println("Waiting 5 seconds before loading cache...")
 	time.Sleep(5 * time.Second)
 
+
 	err = orderCache.LoadFromDB(db.DB)
 	if err != nil {
 		log.Printf("Warning: Failed to load cache from DB: %v", err)
@@ -43,8 +44,13 @@ func main() {
 		log.Printf("Cache initialized with %d orders", orderCache.Size())
 	}
 
-
-	consumer := kafka.NewConsumer(cfg.KafkaBroker, cfg.KafkaTopic, "order-processor-group")
+	consumer := kafka.NewConsumer(
+		cfg.KafkaBroker, 
+		cfg.KafkaTopic, 
+		"order-processor-group",
+		db,          
+		orderCache, 
+	)
 	defer consumer.Close()
 
 	server := api.NewServer(orderCache, db)
@@ -57,36 +63,20 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	go consumer.StartProcessing(ctx)
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-
-	go processOrders(ctx, consumer, db, orderCache)
-
 	log.Println("Application started successfully!")
 	log.Println("Web interface: http://localhost:8080")
-	log.Println("Orders API: http://localhost:8080/orders")
+	log.Println("Orders API: http://localhost:8080/orders") 
 	log.Println("Order by ID: http://localhost:8080/orders/{id}")
-	log.Println("Cache status: http://localhost:8080/cache-status")
 	log.Println("Press Ctrl+C to stop.")
 
 	<-sigChan
 	log.Println("Shutting down application...")
-}
 
-func processOrders(ctx context.Context, consumer *kafka.Consumer, db *database.DB, cache *cache.OrderCache) {
-	for {
-		select {
-		case <-ctx.Done():
-			log.Println("Stopping order processing")
-			return
-		default:
-			err := consumer.ReadAndProcessOrder(ctx, db, cache)
-			if err != nil {
-				log.Printf("Error processing order: %v", err)
-				time.Sleep(2 * time.Second)
-				continue
-			}
-		}
-	}
+	time.Sleep(2 * time.Second)
+	log.Println("Application stopped gracefully")
 }

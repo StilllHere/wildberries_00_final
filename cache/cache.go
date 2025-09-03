@@ -33,6 +33,11 @@ func (c *OrderCache) Get(orderUID string) (*models.Order, bool) {
 	defer c.mu.RUnlock()
 	
 	order, exists := c.orders[orderUID]
+	if exists {
+		log.Printf("CACHE HIT for order: %s", orderUID)
+	} else {
+		log.Printf("CACHE MISS for order: %s", orderUID)
+	}
 	return order, exists
 }
 
@@ -158,7 +163,6 @@ func (c *OrderCache) Clear() {
 
 func (c *OrderCache) GetWithFallback(orderUID string, fallback func(string) (*models.Order, error)) (*models.Order, error) {
 	if order, exists := c.Get(orderUID); exists {
-		log.Printf("Cache hit for order: %s", orderUID)
 		return order, nil
 	}
 	
@@ -172,16 +176,4 @@ func (c *OrderCache) GetWithFallback(orderUID string, fallback func(string) (*mo
 	c.Add(order)
 	
 	return order, nil
-}
-
-
-func (c *OrderCache) Stats() map[string]interface{} {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	
-	return map[string]interface{}{
-		"total_orders": len(c.orders),
-		"memory_usage": "≈ " + string(rune(len(c.orders)*500)) + " KB", 
-		"status":       "active",
-	}
 }
